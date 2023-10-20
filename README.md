@@ -30,6 +30,10 @@ To update the source data, an administrator or process updates the files in an S
 
 As mentioned in the initial assumptions, this is expected to happen at most daily during a maintenance window. 
 
+In this exercise, for simplicity and time constraints (to be able to quickly explore the raw data and test transformations), we will be following an ELT process, where all the raw data is loaded to the final data Store, then transformed in the same data store.
+Since the raw data is not required by the web application, a future enhancement could be to remove the raw data from the final data store and store is simply as intermediary csv or in a data warehouse.
+
+We will also not be catering for schema changes in this exercise. 
 
 ## Data Modelling
 
@@ -122,4 +126,19 @@ An enhancement of this app would be to ensure a user does not see the same banne
 An initial assumption for this project is that the source data will be updated on a schedule. 
 
 If this requirement changes, we could introduce a streaming architecture to continuously update the ``impressions`` and ``conversions`` data sources.
-This can be done by changing the Data Loading lambda function to be triggered by an event in AWS Kinesis or Confluent Kafka. 
+This can be done by changing the Data Loading lambda function to be triggered by an event in AWS Kinesis or Confluent Kafka.
+
+3. Raw data storage
+
+In this exercise, for simplicity and time constraints (to be able to quickly explore the raw data and test transformations), we will be following an ELT process, where all the raw data is loaded to the final data Store, then transformed in the same data store.
+Since the raw data is not required by the web application, a future enhancement could be to remove the raw data from the final data store and store is simply as intermediary csv or in a data warehouse.
+
+Another improvement would be to cater for schema changes in the raw data. 
+
+4. CI/CD
+
+All the resources and code were manually updated for this project. Including CI/CD will make it more maintainable.
+
+5. Security
+
+For the sake of this exercise, security was not a main concern. For a production application, the necessary precautions will need to be taken for networking and API Gateway authorizations to make sure this application is secure. 
