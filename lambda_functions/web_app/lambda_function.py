@@ -30,7 +30,7 @@ def lambda_handler(event, context):
     dataset = get_dataset()
 
     # Read Campaign ID
-    campaign_id = event.get('campaign_id')
+    campaign_id = event.get("pathParameters").get("campaign_id")
 
     # Query Database
     sql = f"""
