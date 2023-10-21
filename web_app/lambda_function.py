@@ -1,6 +1,8 @@
 import json
 import os
+import requests
 from datetime import datetime
+import base64
 
 import psycopg2
 
@@ -62,12 +64,24 @@ def lambda_handler(event, context):
         banner_id = result[0] if result is not None else None
 
         if banner_id is not None:
-            return {
-                'statusCode': 302,  # 302 is the status code for a temporary redirect
-                'headers': {
-                    'Location': f"https://tha-de-alicefinidori-public.s3.eu-west-1.amazonaws.com/images/image_{banner_id}.png"
+            image_url = f"https://tha-de-alicefinidori-public.s3.eu-west-1.amazonaws.com/images/image_{banner_id}.png"
+            response = requests.get(image_url)
+            if response.status_code == 200:
+                image_data = response.content
+                image_base64 = base64.b64encode(image_data).decode('utf-8')
+                return {
+                    'statusCode': 200,
+                    'headers': {
+                        'Content-Type': 'image/jpeg',  # Adjust content type as needed
+                    },
+                    'body': image_base64,
+                    'isBase64Encoded': True
                 }
-            }
+            else:
+                return {
+                    'statusCode': response.status_code,
+                    'body': 'Failed to fetch image'
+                }
         else:
             return {
                 'statusCode': 404,
