@@ -4,9 +4,9 @@ from datetime import datetime
 
 import psycopg2
 
-DATABASE_HOST = os.getenv('DATABASE_HOST')
-DATABASE_NAME = os.getenv('DATABASE_NAME')
-DATABASE_PORT = os.getenv('DATABASE_PORT')
+DATABASE_HOST = os.getenv('DATABASE_HOST', 'tha-de-alicefinidori-db.cpp5x7rhzsqs.eu-west-1.rds.amazonaws.com')
+DATABASE_NAME = os.getenv('DATABASE_NAME', 'postgres')
+DATABASE_PORT = os.getenv('DATABASE_PORT', '5432')
 DATABASE_USERNAME = os.getenv('DATABASE_USERNAME')
 DATABASE_PASSWORD = os.getenv('DATABASE_PASSWORD')
 
@@ -34,7 +34,7 @@ def lambda_handler(event, context):
 
     # Query Database
     sql = f"""
-    select banner_id from final_table
+    select banner_id from top_banners
     where campaign_id = {campaign_id} and dataset = {dataset}
     order by random()
     limit 1;
@@ -45,7 +45,7 @@ def lambda_handler(event, context):
         database=DATABASE_NAME,
         port=DATABASE_PORT,
         user=DATABASE_USERNAME,
-        password=DATABASE_USERNAME
+        password=DATABASE_PASSWORD
     )
 
     try:
@@ -59,21 +59,23 @@ def lambda_handler(event, context):
         conn.close()
 
         # Check if a result is available
-        if result is not None:
-            # The result is the first column of the first row
-            output = result[0]
-        else:
-            output = None
+        banner_id = result[0] if result is not None else None
 
-        return {
-            'statusCode': 200,
-            'body': json.dumps(output)
-        }
+        if banner_id is not None:
+            return {
+                'statusCode': 302,  # 302 is the status code for a temporary redirect
+                'headers': {
+                    'Location': f"https://tha-de-alicefinidori-public.s3.eu-west-1.amazonaws.com/images/image_{banner_id}.png"
+                }
+            }
+        else:
+            return {
+                'statusCode': 404,
+                'body': f'Error: no banner found for campaign id {campaign_id}'
+            }
     except Exception as e:
         return {
             'statusCode': 500,
             'body': f'Error: {str(e)}'
         }
-
-
 
