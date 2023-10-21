@@ -62,10 +62,12 @@ def lambda_handler(event, context):
         banner_id = result[0] if result is not None else None
 
         if banner_id is not None:
+            image_url = f"https://tha-de-alicefinidori-public.s3.eu-west-1.amazonaws.com/images/image_{banner_id}.png"
             return {
-                'statusCode': 302,  # 302 is the status code for a temporary redirect
-                'headers': {
-                    'Location': f"https://tha-de-alicefinidori-public.s3.eu-west-1.amazonaws.com/images/image_{banner_id}.png"
+                'statusCode': 200,  # 302 is the status code for a temporary redirect
+                "body": f'<a href="{image_url}"><img src="{image_url}" alt="Banner {banner_id}" /></a>',
+                "headers": {
+                    'Content-Type': 'text/html',
                 }
             }
         else:

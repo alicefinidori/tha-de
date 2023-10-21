@@ -19,8 +19,7 @@ The web application has the following architecture
 
 A user connects to a lambda function via API Gateway, which in turn queries a Postgres Database on Amazon RDS containing the result data, and returns a banner_id. 
 
-The lambda function then redirects to an image contained in a s3 bucket for the banner. For this api to actually be usable, we would need to return an image with a link to a website rather than redirect to an S3 file link.
-This was done for simplicity and in order to use the images quickly. 
+The lambda function then returns an image. When clicked, it links to the S3 bucket link of that image. For the final product, the image would link to the correct ad. 
 
 All resources used for this application on AWS were tagged with the following key value pairs
 
@@ -189,6 +188,3 @@ For the sake of this exercise, security was not a main concern. For a production
 The AWS resources were manually created via the AWS console.
 The next step would be to import them into a Cloudformation Stack or into Terraform in order to easily re-create the environments. 
 
-7. Banner served 
-
-Currently, we the output to this API is just an image in an S3 bucket. For the banner to actually be usable, we would need to return an image with a link to a website rather than redirect to an image. 
