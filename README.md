@@ -221,3 +221,6 @@ For the sake of this exercise, security was not a main concern. For a production
 The AWS resources were manually created via the AWS console.
 The next step would be to import them into a Cloudformation Stack or into Terraform in order to easily re-create the environments. 
 
+7. Data validation tests
+
+The data transformation in this project is done via SQL, and the python code is fairly straightforward. For rigorous testing of the output of the API, we would need to introduce data validation steps in the transformation. This could be done by using a framework like dbt to run the ELT steps, which includes testing capability.  
