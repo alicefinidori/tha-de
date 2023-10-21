@@ -65,7 +65,7 @@ def lambda_handler(event, context):
             image_url = f"https://tha-de-alicefinidori-public.s3.eu-west-1.amazonaws.com/images/image_{banner_id}.png"
             return {
                 'statusCode': 200,  # 302 is the status code for a temporary redirect
-                "body": f'<a href="{image_url}"><img src="{image_url}" alt="Banner {banner_id}" /></a>',
+                "body": f'<p>Campaign Id {campaign_id}, Dataset {dataset}</p><a href="{image_url}"><img src="{image_url}" alt="Banner {banner_id}" /></a>',
                 "headers": {
                     'Content-Type': 'text/html',
                 }

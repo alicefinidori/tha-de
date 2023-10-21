@@ -21,7 +21,7 @@ The web application has the following architecture
 
 A user connects to a lambda function via API Gateway, which in turn queries a Postgres Database on Amazon RDS containing the result data, and returns a banner_id. 
 
-The lambda function then returns an image. When clicked, it links to the S3 bucket link of that image. For the final product, the image would link to the correct ad. 
+The lambda function then returns the campaign id a dataset values (purely for validation purposes) and an image. When clicked, it links to the S3 bucket link of that image. For the final product, the image would link to the correct ad. 
 
 All resources used for this application on AWS were tagged with the following key value pairs
 
