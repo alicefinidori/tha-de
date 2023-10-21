@@ -79,6 +79,7 @@ The source data is split into 4 data sets, representing the 4 quarters of an hou
 
 For this project, with normalising the data, the ERD diagram can be as follows:
 ![erd.png](readme_images%2Ferd.png)
+
 With the following tables: 
 - campaign_banner
 
@@ -113,13 +114,13 @@ For each campaign, our web page wants to select at random a banner within a list
 
 #### Final schema used
 
-For this exercise and this data structure, our final target table requires to re-aggregate the data, so we can use the simpler ERD. It will entail a little bit of data duplication, but that can be ignored for this dataset.
+For this exercise and this data structure, our final target table requires to re-aggregate the data, so we can skip the normalizing of the data and use this simpler ERD. It will entail a little bit of data duplication, but that can be ignored for this dataset.
 
 ![erd_2.png](readme_images%2Ferd_2.png)
 
 Each of the above table contains is the union of the individual dataset csvs. 
 
-To get the source reference of what banner belongs to what campaign within each dataset, we can simplify by using the distinct ``banner_id``, ``campaign_id`` combinations.
+To get the source reference of what banner belongs to what campaign within each dataset, we can simplify by using the distinct ``banner_id``, ``campaign_id`` combinations in the ``impressions`` data.
 
 Next, to obtain the actual data that is extracted by the web app, views are created. The two main views are:
 
@@ -139,7 +140,7 @@ The main data source for this view is the ``conversions_and_clicks_agg`` view an
 The web page will select for each campaign id a random banner within this view to serve to our end user.
 Because it will be queried directly by the app, this view is persisted in the form of a materialized view. 
 
-## Deploying th lambda function
+## Deploying the lambda function
 
 To deploy the lambda function for the web app, create zip file package with the following commands in the root directory of this project:
 ```commandline
@@ -184,16 +185,16 @@ If we were to run the test with double the number of users, the failure rate goe
 ## Enhancements
 
 
-1. Ensure a unique visitor never sees the same banner twice in a row. 
+### 1. Ensure a unique visitor never sees the same banner twice in a row. 
 
 In the current implementation, the web page will select a random banner thanks to the use of the ``random()`` method in Postgres. 
 We will assume for the sake of this exercise that it is highly unlikely that for a given user, the same banner will be returned twice.
 
 An enhancement of this app would be to ensure a user does not see the same banner twice by storing session data for all API calls: 
 - when a given user opens a session, each time an API call is made, the last returned banner is stored in the session data as ``previous_banner_id`` 
-- the following time a user queries the database explicitly excluding ``previous_banner_id``
+- the following time a user calls the API, the query to the database explicitly excludes ``previous_banner_id``
 
-2. Continuous updates to the source data
+### 2. Continuous updates to the source data
 
 An initial assumption for this project is that the source data will be not be updated. 
 
@@ -201,26 +202,24 @@ If this requirement changes, we could introduce:
 - a batch process to import new csv files on a schedule (e.g. a lambda function triggered by updated to an S3 bucket).
 - a streaming architecture to continuously update the ``impressions`` and ``conversions`` data sources.
 
-3. Raw data storage
+### 3. Raw data storage
 
-In this exercise, for simplicity and time constraints (to be able to quickly explore the raw data and test transformations), we will be following an ELT process, where all the raw data is loaded to the final data Store, then transformed in the same data store.
-Since the raw data is not required by the web application, a future enhancement could be to remove the raw data from the final data store and store is simply as intermediary csv or in a data warehouse.
+In this exercise, we will be following an ELT process. For simplicity and time constraints (to be able to quickly explore the raw data and test transformations) where all the raw data is loaded to the final data store, then transformed in the same data store.
+Since the raw data is not required by the web application, a future enhancement could be to remove the raw and staging data from the final data store and store it simply as csv or in a data warehouse.
 
 Another improvement would be to cater for schema changes in the raw data. 
 
-4. CI/CD
+### 4. CI/CD & Infrastructure as Code
 
-All the resources and code were manually updated for this project. Including CI/CD will make it more maintainable.
+All the resources and code were manually created and deployed for this project. 
+Including CI/CD and infrastructure as code will make it more maintainable and give us the ability to easily re-create the environments.
 
-5. Security
+To generate the infrastructure as code, we could import the AWS resources into a Cloudformation Stack or into Terraform (by selecting the resources thanks to their tags).
+
+### 5. Security
 
 For the sake of this exercise, security was not a main concern. For a production application, the necessary precautions will need to be taken for networking and API Gateway authorizations to make sure this application is secure.
 
-6. Infrastructure as Code
-
-The AWS resources were manually created via the AWS console.
-The next step would be to import them into a Cloudformation Stack or into Terraform in order to easily re-create the environments. 
-
-7. Data validation tests
+### 6. Data validation tests
 
 The data transformation in this project is done via SQL, and the python code is fairly straightforward. For rigorous testing of the output of the API, we would need to introduce data validation steps in the transformation. This could be done by using a framework like dbt to run the ELT steps, which includes testing capability.  
