@@ -13,6 +13,8 @@ The goal of this project is to create a web page which serves banners for one of
 
 ### Web application 
 
+The web app is available at the following endpoint: https://8xrnxosynb.execute-api.eu-west-1.amazonaws.com/default/campaigns/{campaign_id}.
+
 The web application has the following architecture
 
 ![web_app_architecture_with_s3.png](readme_images%2Fweb_app_architecture_with_s3.png)
@@ -37,7 +39,7 @@ For automation purposed, the next step would be to import these resources using 
 As mentioned in the initial assumptions, the data loading is expected to happen ad-hoc, and should not allow to import duplicated data.
 Therefore, for this exercise, the data is to be updated manually via a data loading script in this repository. A potential improvement would be to automate this import (see enhancements at the end of this file).
 
-The data loading script can be executed by running the following commands
+The data loading script can be executed by running the following commands in the root directory of this project:
 ```commandline
 pip install -r data_loading/requirements.txt
 python data_loading/data_loading.py
@@ -139,13 +141,44 @@ Because it will be queried directly by the app, this view is persisted in the fo
 
 ## Deploying th lambda function
 
-To deploy the lambda function for the web app, create zip file package with the following commands:
+To deploy the lambda function for the web app, create zip file package with the following commands in the root directory of this project:
 ```commandline
 docker build -t lambda-builder .
 docker run --rm -v $(pwd)/web_app:/app lambda-builder
 ```
 
 ## Load testing
+
+In order to load test this application, the [locust](https://docs.locust.io/en/stable/what-is-locust.html) framework is used.
+
+Note: This framework is new to me :). 
+
+To run the load test, run the following commands in the root directory of this project:
+```commandline
+pip install locust
+locust -f load_test/locustfile.py --host=https://8xrnxosynb.execute-api.eu-west-1.amazonaws.com --users 500 --spawn-rate 208 --run-time 2m
+```
+Then open the following link in a browser: http://0.0.0.0:8089/, and start the test.
+
+The requirement for load on this application is as follows: 
+
+> Your application should serve at least 5000 requests per minute ­ The script and results of the stress­ test should be provided.
+
+For determining those parameters, we use the following calculation: 
+```
+Hatch Rate = (Total Number of Users / Test Duration in seconds) * (Desired Requests Per Minute / 60)
+```
+i.e. in our case: 
+```commandline
+Hatch Rate = (500 / 120) * (5,000 / 60) = 208.33 
+```
+
+![load_test.png](readme_images%2Fload_test.png)
+
+The app sustains the load test. 
+
+If we were to run the test with double the number of users, the failure rate goes to about 10 percent. In order to improve the performance of our app, we would need to increase the lambda concurrency limit. This was not done as part of this exercise. 
+
 
 
 ## Enhancements
