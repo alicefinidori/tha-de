@@ -142,13 +142,8 @@ Because it will be queried directly by the app, this view is persisted in the fo
 
 To deploy the lambda function for the web app, create zip file package with the following commands:
 ```commandline
-cd web_app
-mkdir package
-pip install --target ./package -r requirements.txt
-cd package
-zip -r ../web_app_lambda.zip .
-cd ..
-zip web_app_lambda.zip lambda_function.py
+docker build -t lambda-builder .
+docker run --rm -v $(pwd)/web_app:/app lambda-builder
 ```
 
 ## Load testing
