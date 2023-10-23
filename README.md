@@ -19,19 +19,19 @@ The web application has the following architecture
 
 ![web_app_architecture_with_s3.png](readme_images%2Fweb_app_architecture_with_s3.png)
 
-A user connects to a lambda function via API Gateway, which in turn queries a Postgres Database on Amazon RDS containing the result data, and returns a banner_id. 
+A user connects to a python lambda function via API Gateway, which in turn queries a Postgres Database on Amazon RDS containing the result data, and returns a banner_id. 
 
 The lambda function then returns the campaign id a dataset values (purely for validation purposes) and an image. When clicked, it links to the S3 bucket link of that image. For the final product, the image would link to the correct ad. 
 
 All resources used for this application on AWS were tagged with the following key value pairs
 
-| Key | Value |
-| -------- | -------- | 
-| owner | alicefinidori | 
-| project | tha-de-alicefinidori | 
-| environment | dev | 
+| Key | Value                   |
+| -------- |-------------------------| 
+| owner | alicefinidori@gmail.com | 
+| project | tha-de-alicefinidori    | 
+| environment | dev                     | 
 
-For automation purposed, the next step would be to import these resources using the tags into a Cloudformation Stack or with Terraform. 
+For automation purposes, the next step would be to import these resources using the tags into a Cloudformation Stack or with Terraform. 
 
 
 ### Data Loading
@@ -148,6 +148,8 @@ docker build -t lambda-builder .
 docker run --rm -v $(pwd)/web_app:/app lambda-builder
 ```
 
+Note: To install docker, follow instructions [here](https://docs.docker.com/engine/install/).
+
 ## Load testing
 
 In order to load test this application, the [locust](https://docs.locust.io/en/stable/what-is-locust.html) framework is used.
@@ -200,7 +202,7 @@ An initial assumption for this project is that the source data will be not be up
 
 If this requirement changes, we could introduce: 
 - a batch process to import new csv files on a schedule (e.g. a lambda function triggered by updated to an S3 bucket).
-- a streaming architecture to continuously update the ``impressions`` and ``conversions`` data sources.
+- a streaming architecture to continuously update the ``impressions``, ``clicks`` and ``conversions`` data sources.
 
 ### 3. Raw data storage
 
