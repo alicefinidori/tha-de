@@ -32,6 +32,7 @@ CREATE_FINAL_TABLES_SQL = f"""
         campaign_id int	
     );
 
+    ---- Compute total revenue and clicks for each dataset, campaign and banner
     create or replace view conversions_and_clicks_agg as (
         select dataset, campaign_id, banner_id, coalesce(sum(revenue), 0) as total_revenue, count(distinct click_id) as click_counts
         from impressions i 
@@ -40,6 +41,7 @@ CREATE_FINAL_TABLES_SQL = f"""
         group by dataset, campaign_id, banner_id 
     );
 
+    ---- Compute X (the number of banners with conversions within a campaign)
     create or replace view count_x as (
         select dataset, campaign_id, count(distinct banner_id) as x
         from conversions_and_clicks_agg 
@@ -47,6 +49,7 @@ CREATE_FINAL_TABLES_SQL = f"""
         group by dataset, campaign_id
     );
 
+    ---- Determine top 10 banners for each dataset, campaign id based on revenue
     create or replace view top_10_conversions as (
         select dataset, campaign_id, banner_id, total_revenue, click_counts
         from (
@@ -59,6 +62,7 @@ CREATE_FINAL_TABLES_SQL = f"""
         where row_num <= 10
     );
 
+    ---- Determine top 5 non-revenue generating banners based on clicks 
     create or replace view top_5_non_converted_clicks as (
         select dataset, campaign_id, banner_id, total_revenue, click_counts
         from (
@@ -71,6 +75,7 @@ CREATE_FINAL_TABLES_SQL = f"""
         where row_num <= 5
     );
 
+    ---- Select 5 random non-click generating banners
     create or replace view random_5_non_clicked_impressions as (
         select dataset, campaign_id, banner_id, total_revenue, click_counts
         from (
@@ -82,6 +87,7 @@ CREATE_FINAL_TABLES_SQL = f"""
         ) A where row_num <= 5
     );
 
+    ---- Generate view of acceptable list of banners for each campaign id and dataset based on the business rules
     create materialized view if not exists top_banners as 
     select * from (
         select *, row_number() over (partition by dataset, campaign_id order by dataset, campaign_id, total_revenue, click_counts) as row_num

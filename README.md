@@ -147,6 +147,9 @@ Because it will be queried directly by the app, this view is persisted in the fo
 
 Below is the view code for implementing the business rules and generating the top_banners view, found [here](data_loading/data_loading.py#L35).
 
+
+- Compute total revenue and clicks for each dataset, campaign and banner
+
 ```commandline
     create or replace view conversions_and_clicks_agg as (
         select dataset, campaign_id, banner_id, coalesce(sum(revenue), 0) as total_revenue, count(distinct click_id) as click_counts
@@ -155,14 +158,20 @@ Below is the view code for implementing the business rules and generating the to
         left join conversions co using(click_id, dataset)
         group by dataset, campaign_id, banner_id 
     );
+ ```
+- Compute X (the number of banners with conversions within a campaign)
 
+```commandline
     create or replace view count_x as (
         select dataset, campaign_id, count(distinct banner_id) as x
         from conversions_and_clicks_agg 
         where total_revenue > 0
         group by dataset, campaign_id
     );
+ ```
+- Determine top 10 banners for each dataset, campaign id based on revenue
 
+```commandline
     create or replace view top_10_conversions as (
         select dataset, campaign_id, banner_id, total_revenue, click_counts
         from (
@@ -174,7 +183,11 @@ Below is the view code for implementing the business rules and generating the to
         ) A
         where row_num <= 10
     );
+```
 
+- Determine top 5 non-revenue generating banners based on clicks
+
+```commandline
     create or replace view top_5_non_converted_clicks as (
         select dataset, campaign_id, banner_id, total_revenue, click_counts
         from (
@@ -186,7 +199,11 @@ Below is the view code for implementing the business rules and generating the to
         ) B
         where row_num <= 5
     );
+ ```
 
+- Select 5 random non-click generating banners
+
+```commandline
     create or replace view random_5_non_clicked_impressions as (
         select dataset, campaign_id, banner_id, total_revenue, click_counts
         from (
@@ -197,19 +214,23 @@ Below is the view code for implementing the business rules and generating the to
             where total_revenue = 0 and click_counts = 0
         ) A where row_num <= 5
     );
+```
 
-    create materialized view if not exists top_banners as 
-    select * from (
-        select *, row_number() over (partition by dataset, campaign_id order by dataset, campaign_id, total_revenue, click_counts) as row_num
-        from (
-            select * from top_10_conversions co
-            union
-            select * from top_5_non_converted_clicks cl
-            union
-            select * from random_5_non_clicked_impressions i
-        ) A 
-        left join count_x using(dataset, campaign_id)
-    ) B where row_num <= case when x >= 10 then 10 when x >= 5 then x else 5 end;
+- Generate view of acceptable list of banners for each campaign id and dataset based on the business rules
+
+```commandline
+ create materialized view if not exists top_banners as 
+ select * from (
+     select *, row_number() over (partition by dataset, campaign_id order by dataset, campaign_id, total_revenue, click_counts) as row_num
+     from (
+         select * from top_10_conversions co
+         union
+         select * from top_5_non_converted_clicks cl
+         union
+         select * from random_5_non_clicked_impressions i
+     ) A 
+     left join count_x using(dataset, campaign_id)
+ ) B where row_num <= case when x >= 10 then 10 when x >= 5 then x else 5 end;
     
  ```
 
