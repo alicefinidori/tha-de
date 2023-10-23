@@ -13,7 +13,7 @@ The goal of this project is to create a web page which serves banners for one of
 
 ### Web application 
 
-The web app is available at the following endpoint: https://8xrnxosynb.execute-api.eu-west-1.amazonaws.com/default/campaigns/{campaign_id}.
+The web app is available at the following endpoint: [https://8xrnxosynb.execute-api.eu-west-1.amazonaws.com/default/campaigns/{campaign_id}](https://8xrnxosynb.execute-api.eu-west-1.amazonaws.com/default/campaigns/12).
 
 The web application has the following architecture
 
