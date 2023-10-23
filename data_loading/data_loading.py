@@ -124,6 +124,9 @@ def insert_into(csv_name, con):
         select *, {dataset} from {csv_name}_{dataset}
         """)
     sql += "union".join(sql_list)
+    sql += """
+    ON CONFLICT DO NOTHING;
+    """
     con.execute(text(sql))
     return sql
 
