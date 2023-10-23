@@ -140,6 +140,82 @@ The main data source for this view is the ``conversions_and_clicks_agg`` view an
 The web page will select for each campaign id a random banner within this view to serve to our end user.
 Because it will be queried directly by the app, this view is persisted in the form of a materialized view. 
 
+
+<details>
+    <summary> <b>Implementation of business logic for selecting the banners for each campaign ID</b> </summary>
+
+
+Below is the view code for implementing the business rules and generating the top_banners view, found [here](data_loading/data_loading.py#L35).
+
+```commandline
+    create or replace view conversions_and_clicks_agg as (
+        select dataset, campaign_id, banner_id, coalesce(sum(revenue), 0) as total_revenue, count(distinct click_id) as click_counts
+        from impressions i 
+        left join clicks cl using(dataset, banner_id, campaign_id)
+        left join conversions co using(click_id, dataset)
+        group by dataset, campaign_id, banner_id 
+    );
+
+    create or replace view count_x as (
+        select dataset, campaign_id, count(distinct banner_id) as x
+        from conversions_and_clicks_agg 
+        where total_revenue > 0
+        group by dataset, campaign_id
+    );
+
+    create or replace view top_10_conversions as (
+        select dataset, campaign_id, banner_id, total_revenue, click_counts
+        from (
+            select 
+                *,
+                row_number() over (partition by dataset, campaign_id order by total_revenue desc) as row_num
+            from conversions_and_clicks_agg c 
+            where total_revenue > 0
+        ) A
+        where row_num <= 10
+    );
+
+    create or replace view top_5_non_converted_clicks as (
+        select dataset, campaign_id, banner_id, total_revenue, click_counts
+        from (
+            select 
+                *,
+                row_number() over (partition by dataset, campaign_id order by click_counts desc) as row_num
+            from conversions_and_clicks_agg c 
+            where total_revenue = 0 and click_counts > 0
+        ) B
+        where row_num <= 5
+    );
+
+    create or replace view random_5_non_clicked_impressions as (
+        select dataset, campaign_id, banner_id, total_revenue, click_counts
+        from (
+            select 
+                *,
+                row_number() over (partition by dataset, campaign_id order by random()) as row_num
+            from conversions_and_clicks_agg c 
+            where total_revenue = 0 and click_counts = 0
+        ) A where row_num <= 5
+    );
+
+    create materialized view if not exists top_banners as 
+    select * from (
+        select *, row_number() over (partition by dataset, campaign_id order by dataset, campaign_id, total_revenue, click_counts) as row_num
+        from (
+            select * from top_10_conversions co
+            union
+            select * from top_5_non_converted_clicks cl
+            union
+            select * from random_5_non_clicked_impressions i
+        ) A 
+        left join count_x using(dataset, campaign_id)
+    ) B where row_num <= case when x >= 10 then 10 when x >= 5 then x else 5 end;
+    
+ ```
+
+</details>
+
+
 ## Deploying the lambda function
 
 To deploy the lambda function for the web app, create zip file package with the following commands in the root directory of this project:
@@ -147,6 +223,8 @@ To deploy the lambda function for the web app, create zip file package with the 
 docker build -t lambda-builder .
 docker run --rm -v $(pwd)/web_app:/app lambda-builder
 ```
+
+This command creates a zip file (``web_app_lambda.zip``) which can be uploaded to AWS Lambda via the AWS console. 
 
 Note: To install docker, follow instructions [here](https://docs.docker.com/engine/install/).
 
